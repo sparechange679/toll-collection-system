@@ -18,9 +18,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $driverProfile = null;
+
+        if ($user->isDriver()) {
+            $driverProfile = $user->driverProfile;
+        }
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'driverProfile' => $driverProfile,
         ]);
     }
 
@@ -29,13 +37,34 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        if ($user->isDriver() && $user->driverProfile) {
+            $user->driverProfile->update([
+                'license_number' => $validated['license_number'],
+                'license_expiry_date' => $validated['license_expiry_date'],
+                'phone_number' => $validated['phone_number'],
+                'address' => $validated['address'],
+                'city' => $validated['city'],
+                'district' => $validated['district'],
+                'date_of_birth' => $validated['date_of_birth'],
+                'id_number' => $validated['id_number'],
+                'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
+                'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? null,
+            ]);
+        }
 
         return to_route('profile.edit');
     }

@@ -28,12 +28,15 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
+            'role' => ['required', 'string', Rule::in(['admin', 'staff', 'driver'])],
         ])->validate();
 
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'role' => $input['role'],
+            'onboarding_completed' => in_array($input['role'], ['admin', 'staff']), // Only drivers need onboarding
         ]);
     }
 }

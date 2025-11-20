@@ -16,7 +16,7 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
 
             'email' => [
@@ -28,5 +28,22 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];
+
+        if ($this->user()->isDriver()) {
+            $rules = array_merge($rules, [
+                'license_number' => ['required', 'string', 'max:255'],
+                'license_expiry_date' => ['required', 'date', 'after:today'],
+                'phone_number' => ['required', 'string', 'max:255'],
+                'address' => ['required', 'string'],
+                'city' => ['required', 'string', 'max:255'],
+                'district' => ['required', 'string', 'max:255'],
+                'date_of_birth' => ['required', 'date', 'before:today'],
+                'id_number' => ['required', 'string', 'max:255'],
+                'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+                'emergency_contact_phone' => ['nullable', 'string', 'max:255'],
+            ]);
+        }
+
+        return $rules;
     }
 }

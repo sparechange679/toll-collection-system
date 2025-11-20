@@ -22,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'onboarding_completed',
+        'balance',
     ];
 
     /**
@@ -47,6 +50,56 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'onboarding_completed' => 'boolean',
+            'balance' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Get the driver profile associated with the user.
+     */
+    public function driverProfile()
+    {
+        return $this->hasOne(DriverProfile::class);
+    }
+
+    /**
+     * Get the vehicles associated with the user.
+     */
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
+
+    /**
+     * Get the transactions associated with the user.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Check if user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is a staff.
+     */
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    /**
+     * Check if user is a driver.
+     */
+    public function isDriver(): bool
+    {
+        return $this->role === 'driver';
     }
 }
