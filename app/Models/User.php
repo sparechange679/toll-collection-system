@@ -3,14 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -25,6 +28,8 @@ class User extends Authenticatable
         'role',
         'onboarding_completed',
         'balance',
+        'registration_number',
+        'is_active',
     ];
 
     /**
@@ -58,7 +63,7 @@ class User extends Authenticatable
     /**
      * Get the driver profile associated with the user.
      */
-    public function driverProfile()
+    public function driverProfile(): HasOne|User
     {
         return $this->hasOne(DriverProfile::class);
     }
@@ -66,7 +71,7 @@ class User extends Authenticatable
     /**
      * Get the vehicles associated with the user.
      */
-    public function vehicles()
+    public function vehicles(): User|HasMany
     {
         return $this->hasMany(Vehicle::class);
     }
@@ -74,7 +79,7 @@ class User extends Authenticatable
     /**
      * Get the transactions associated with the user.
      */
-    public function transactions()
+    public function transactions(): User|HasMany
     {
         return $this->hasMany(Transaction::class);
     }

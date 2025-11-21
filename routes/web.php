@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OtpController;
+use App\Services\WalletService;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -30,7 +31,8 @@ Route::middleware(['auth', 'verified', 'role:driver'])->group(function () {
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('onboarding/driver-onboarding');
+        // Page moved to resources/js/pages/driver/onboarding/driver-onboarding.tsx
+        return Inertia::render('driver/onboarding/driver-onboarding');
     })->name('onboarding');
 
     Route::post('/onboarding/complete', [App\Http\Controllers\OnboardingController::class, 'complete'])
@@ -65,7 +67,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         } elseif ($user->isStaff()) {
             return Inertia::render('dashboards/staff-dashboard');
         } else {
-            return Inertia::render('dashboards/driver-dashboard');
+            /** @var WalletService $walletService */
+            $walletService = app(WalletService::class);
+
+            return Inertia::render('dashboards/driver-dashboard', [
+                'transactions_summary' => $walletService->getDailyTransactionsSummary($user, 14),
+            ]);
         }
     })->name('dashboard');
 
@@ -131,6 +138,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('wallet.cancel');
         Route::get('/balance/check', [App\Http\Controllers\WalletController::class, 'checkBalance'])
             ->name('wallet.balance.check');
+        Route::get('/export/xlsx', [App\Http\Controllers\WalletController::class, 'exportXlsx'])
+            ->name('wallet.export.xlsx');
+        Route::get('/export/pdf', [App\Http\Controllers\WalletController::class, 'exportPdf'])
+            ->name('wallet.export.pdf');
     });
 });
 
