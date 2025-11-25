@@ -107,4 +107,60 @@ class User extends Authenticatable
     {
         return $this->role === 'driver';
     }
+
+    /**
+     * Get the toll passages associated with the user.
+     */
+    public function tollPassages(): User|HasMany
+    {
+        return $this->hasMany(TollPassage::class);
+    }
+
+    /**
+     * Get the shift logs associated with the staff member.
+     */
+    public function shiftLogs(): User|HasMany
+    {
+        return $this->hasMany(ShiftLog::class, 'staff_id');
+    }
+
+    /**
+     * Get the manual transactions created by the staff member.
+     */
+    public function manualTransactions(): User|HasMany
+    {
+        return $this->hasMany(ManualTransaction::class, 'staff_id');
+    }
+
+    /**
+     * Get the incidents reported by the user.
+     */
+    public function reportedIncidents(): User|HasMany
+    {
+        return $this->hasMany(Incident::class, 'reported_by');
+    }
+
+    /**
+     * Get the incidents resolved by the user.
+     */
+    public function resolvedIncidents(): User|HasMany
+    {
+        return $this->hasMany(Incident::class, 'resolved_by');
+    }
+
+    /**
+     * Get the handover notes sent by the staff member.
+     */
+    public function sentHandoverNotes(): User|HasMany
+    {
+        return $this->hasMany(HandoverNote::class, 'from_staff_id');
+    }
+
+    /**
+     * Get the handover notes received by the staff member.
+     */
+    public function receivedHandoverNotes(): User|HasMany
+    {
+        return $this->hasMany(HandoverNote::class, 'to_staff_id');
+    }
 }

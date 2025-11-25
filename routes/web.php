@@ -124,6 +124,55 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('vehicles.show');
     });
 
+    // Staff Routes
+    Route::middleware('role:staff')->prefix('staff')->name('staff.')->group(function () {
+        // Dashboard
+        Route::get('dashboard', [App\Http\Controllers\Staff\DashboardController::class, 'index'])
+            ->name('dashboard');
+        Route::get('dashboard/updates', [App\Http\Controllers\Staff\DashboardController::class, 'updates'])
+            ->name('dashboard.updates');
+
+        // Shift Management
+        Route::get('shifts', [App\Http\Controllers\Staff\ShiftController::class, 'index'])
+            ->name('shifts.index');
+        Route::post('shifts/clock-in', [App\Http\Controllers\Staff\ShiftController::class, 'clockIn'])
+            ->name('shifts.clock-in');
+        Route::post('shifts/clock-out', [App\Http\Controllers\Staff\ShiftController::class, 'clockOut'])
+            ->name('shifts.clock-out');
+        Route::get('shifts/{shift}', [App\Http\Controllers\Staff\ShiftController::class, 'show'])
+            ->name('shifts.show');
+        Route::get('shifts/{shift}/export', [App\Http\Controllers\Staff\ShiftController::class, 'exportReport'])
+            ->name('shifts.export');
+
+        // Passage Logs
+        Route::get('passages', [App\Http\Controllers\Staff\PassageController::class, 'index'])
+            ->name('passages.index');
+        Route::get('passages/{passage}', [App\Http\Controllers\Staff\PassageController::class, 'show'])
+            ->name('passages.show');
+
+        // Manual Transactions
+        Route::post('transactions/cash-payment', [App\Http\Controllers\Staff\ManualTransactionController::class, 'processCashPayment'])
+            ->name('transactions.cash-payment');
+        Route::post('transactions/manual-override', [App\Http\Controllers\Staff\ManualTransactionController::class, 'processManualOverride'])
+            ->name('transactions.manual-override');
+        Route::post('transactions/add-fine', [App\Http\Controllers\Staff\ManualTransactionController::class, 'addFine'])
+            ->name('transactions.add-fine');
+
+        // Incidents
+        Route::get('incidents', [App\Http\Controllers\Staff\IncidentController::class, 'index'])
+            ->name('incidents.index');
+        Route::post('incidents', [App\Http\Controllers\Staff\IncidentController::class, 'store'])
+            ->name('incidents.store');
+        Route::post('incidents/{incident}/status', [App\Http\Controllers\Staff\IncidentController::class, 'updateStatus'])
+            ->name('incidents.update-status');
+
+        // Driver Lookup
+        Route::get('driver-lookup', [App\Http\Controllers\Staff\DriverLookupController::class, 'index'])
+            ->name('driver-lookup.index');
+        Route::post('driver-lookup/search', [App\Http\Controllers\Staff\DriverLookupController::class, 'search'])
+            ->name('driver-lookup.search');
+    });
+
     // Wallet Routes
     Route::prefix('wallet')->group(function () {
         Route::get('/', [App\Http\Controllers\WalletController::class, 'index'])
