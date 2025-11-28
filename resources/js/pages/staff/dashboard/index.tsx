@@ -117,7 +117,7 @@ export default function StaffDashboard({
 
     if (error) {
         return (
-            <AppLayout breadcrumbs={[{ label: 'Staff Dashboard', url: '/staff/dashboard' }]}>
+            <AppLayout breadcrumbs={[{ title: 'Staff Dashboard', href: '/staff/dashboard' }]}>
                 <div className="p-6">
                     <Alert variant="destructive">
                         <AlertDescription>{error}</AlertDescription>
@@ -145,7 +145,7 @@ export default function StaffDashboard({
     };
 
     return (
-        <AppLayout breadcrumbs={[{ label: 'Staff Dashboard', url: '/staff/dashboard' }]}>
+        <AppLayout breadcrumbs={[{ title: 'Staff Dashboard', href: '/staff/dashboard' }]}>
             <div className="p-6 space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
@@ -219,7 +219,7 @@ export default function StaffDashboard({
                             <CardDescription>Total Revenue</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-2xl font-bold">₱{todayStats.total_revenue}</p>
+                            <p className="text-2xl font-bold">&dollar;{todayStats.total_revenue}</p>
                         </CardContent>
                     </Card>
                     <Card>
