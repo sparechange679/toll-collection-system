@@ -365,6 +365,7 @@ void processRFID(String uid) {
   http.begin(API_URL);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
+  http.setTimeout(15000);  // Increase timeout to 15 seconds
 
   // Create JSON payload
   StaticJsonDocument<256> requestDoc;

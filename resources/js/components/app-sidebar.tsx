@@ -14,7 +14,7 @@ import { index as walletIndex, transactions as walletTransactions } from '@/rout
 import { index as vehiclesIndex, create as vehiclesCreate } from '@/routes/vehicles';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Wallet, Receipt, Car, Bell, Database, FileText } from 'lucide-react';
+import { LayoutGrid, Wallet, Receipt, Car, Bell, Database, FileText, Activity } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const getMainNavItems = (userRole: string): NavItem[] => {
@@ -97,6 +97,17 @@ const getMainNavItems = (userRole: string): NavItem[] => {
                 title: 'Reports',
                 href: { url: '/admin/reports', method: 'get' },
                 icon: FileText,
+            }
+        );
+    }
+
+    // Add staff-specific links
+    if (userRole === 'staff') {
+        items.push(
+            {
+                title: 'Toll Gate Monitor',
+                href: { url: '/staff/toll-gate-monitor', method: 'get' },
+                icon: Activity,
             }
         );
     }

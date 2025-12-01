@@ -9,14 +9,14 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TollReceiptMail extends Mailable implements ShouldQueue
+class WalletTopUpMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(public array $receiptData) {}
+    public function __construct(public array $topUpData) {}
 
     /**
      * Get the message envelope.
@@ -24,7 +24,7 @@ class TollReceiptMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Toll Payment Receipt - '.$this->receiptData['toll_gate'],
+            subject: 'Wallet Top-Up Confirmation - $'.number_format($this->topUpData['amount'], 2),
         );
     }
 
@@ -34,10 +34,8 @@ class TollReceiptMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.toll-receipt',
-            with: [
-                'data' => $this->receiptData,
-            ],
+            view: 'emails.wallet-topup',
+            with: ['data' => $this->topUpData],
         );
     }
 

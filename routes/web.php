@@ -161,6 +161,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('passages/{passage}', [App\Http\Controllers\Staff\PassageController::class, 'show'])
             ->name('passages.show');
 
+        // Toll Gate Monitor
+        Route::get('toll-gate-monitor', [App\Http\Controllers\Staff\TollGateMonitorController::class, 'index'])
+            ->name('toll-gate-monitor');
+        Route::get('toll-gate-monitor/updates', [App\Http\Controllers\Staff\TollGateMonitorController::class, 'updates'])
+            ->name('toll-gate-monitor.updates');
+
         // Manual Transactions
         Route::post('transactions/cash-payment', [App\Http\Controllers\Staff\ManualTransactionController::class, 'processCashPayment'])
             ->name('transactions.cash-payment');

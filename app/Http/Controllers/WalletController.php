@@ -132,6 +132,23 @@ class WalletController extends Controller
                                 'customer_email' => $session->customer_details->email ?? null,
                             ]
                         );
+
+                        // Send email confirmation
+                        try {
+                            \Mail::to($user->email)->send(new \App\Mail\WalletTopUpMail([
+                                'user_name' => $user->name,
+                                'user_email' => $user->email,
+                                'amount' => (float) $amount,
+                                'new_balance' => $user->fresh()->balance,
+                                'reference' => $sessionId,
+                                'timestamp' => now()->format('Y-m-d H:i:s'),
+                            ]));
+                        } catch (\Exception $e) {
+                            \Log::warning('Failed to send wallet top-up email', [
+                                'user' => $user->email,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
                 }
 
