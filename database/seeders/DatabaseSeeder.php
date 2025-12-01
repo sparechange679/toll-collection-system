@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Database\Seeders\TollGateSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -23,5 +24,10 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        // Seed initial toll gate data
+        $this->call([
+            TollGateSeeder::class,
+        ]);
     }
 }

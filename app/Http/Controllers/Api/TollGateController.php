@@ -54,9 +54,13 @@ class TollGateController extends Controller
         $fineAmount = 0;
         $isOverweight = false;
 
-        // Check if vehicle is overweight
-        if ($request->weight_kg && $tollGate->weight_limit_kg) {
-            if ($request->weight_kg > $tollGate->weight_limit_kg) {
+        // Check if vehicle is overweight using vehicle's weight capacity
+        // Weight measured at toll gate is compared against the vehicle's max capacity
+        if ($request->weight_kg && $vehicle->weight) {
+            // Convert raw reading to kg (1:1 ratio: 200 raw = 200kg)
+            $measuredWeightKg = $request->weight_kg;
+
+            if ($measuredWeightKg > $vehicle->weight) {
                 $isOverweight = true;
                 $fineAmount = $tollGate->overweight_fine_rate ?? 1000;
             }
@@ -67,6 +71,24 @@ class TollGateController extends Controller
         // Check if user has sufficient balance
         $user = $vehicle->user;
         if ($user->balance < $totalAmount) {
+            // Create notification for insufficient balance
+            $notification = \App\Models\Notification::create([
+                'type' => 'toll_failed',
+                'title' => 'Toll Payment Failed - Insufficient Balance',
+                'message' => "Failed to pass {$tollGate->name}. Required: \${$totalAmount}, Available: \${$user->balance}. Please top up your wallet.",
+                'data' => json_encode([
+                    'toll_gate' => $tollGate->name,
+                    'required_amount' => $totalAmount,
+                    'current_balance' => $user->balance,
+                    'vehicle' => $vehicle->registration_number,
+                ]),
+                'sent_at' => now(),
+            ]);
+
+            $notification->recipients()->create([
+                'user_id' => $user->id,
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient balance',
@@ -125,6 +147,47 @@ class TollGateController extends Controller
             ]);
 
             DB::commit();
+
+            // Create notification for successful toll passage
+            $notification = \App\Models\Notification::create([
+                'type' => 'toll_passage',
+                'title' => 'Toll Payment Successful',
+                'message' => "Payment of \${$totalAmount} deducted at {$tollGate->name}. New balance: \${$user->balance}",
+                'data' => json_encode([
+                    'toll_gate' => $tollGate->name,
+                    'amount' => $totalAmount,
+                    'new_balance' => $user->balance,
+                    'vehicle' => $vehicle->registration_number,
+                    'is_overweight' => $isOverweight,
+                    'fine_amount' => $fineAmount,
+                ]),
+                'sent_at' => now(),
+            ]);
+
+            $notification->recipients()->create([
+                'user_id' => $user->id,
+            ]);
+
+            // Send email receipt
+            try {
+                \Mail::to($user->email)->send(new \App\Mail\TollReceiptMail([
+                    'user_name' => $user->name,
+                    'toll_gate' => $tollGate->name,
+                    'vehicle_registration' => $vehicle->registration_number,
+                    'vehicle_make_model' => "{$vehicle->make} {$vehicle->model}",
+                    'toll_amount' => $tollAmount,
+                    'fine_amount' => $fineAmount,
+                    'total_amount' => $totalAmount,
+                    'new_balance' => $user->balance,
+                    'is_overweight' => $isOverweight,
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                ]));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send email receipt', [
+                    'user' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             Log::info('Toll passage successful', [
                 'rfid' => $rfidUid,

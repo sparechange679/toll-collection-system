@@ -29,12 +29,14 @@ interface PageProps {
         };
     };
     transactions_summary?: TransactionsSummaryItem[];
+    vehicles_count?: number;
+    recent_trips_count?: number;
 }
 
 export default function DriverDashboard() {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    const { auth, transactions_summary } = usePage<PageProps>().props;
+    const { auth, transactions_summary, vehicles_count = 0, recent_trips_count = 0 } = usePage<PageProps>().props;
     const [showTopUpModal, setShowTopUpModal] = useState(false);
 
     const formatCurrency = (amount: string) => {
@@ -53,13 +55,13 @@ export default function DriverDashboard() {
         },
         {
             title: 'My Vehicles',
-            value: '0',
+            value: vehicles_count.toString(),
             icon: Car,
             description: 'Registered vehicles',
         },
         {
             title: 'Recent Trips',
-            value: '0',
+            value: recent_trips_count.toString(),
             icon: Receipt,
             description: 'This month',
         },
@@ -106,43 +108,53 @@ export default function DriverDashboard() {
                     <CardContent>
                         {transactions_summary && transactions_summary.length > 0 ? (
                             <div className="space-y-4">
-                                {/* Simple bar chart using flex, scaled to max of debit+credit */}
+                                {/* Simple bar chart using flex, scaled to max of individual values */}
                                 {(() => {
                                     const points = transactions_summary;
+                                    // Find max of debits and credits separately to properly scale
                                     const maxValue = Math.max(
                                         1,
-                                        ...points.map((p) => (p.debit_total + p.credit_total))
+                                        ...points.map((p) => Math.max(Math.abs(p.debit_total), p.credit_total))
                                     );
-                                    const barMaxHeight = 160; // px
+                                    const barMaxHeight = 140; // px - constrained to fit in container
                                     return (
                                         <div>
-                                            <div className="flex items-end gap-2 h-[200px] border rounded-md p-3">
+                                            <div className="flex items-end gap-2 h-[180px] border rounded-md p-3 overflow-hidden">
                                                 {points.map((p, idx) => {
-                                                    const debitHeight = Math.round((p.debit_total / maxValue) * barMaxHeight);
-                                                    const creditHeight = Math.round((p.credit_total / maxValue) * barMaxHeight);
+                                                    // Use absolute value for debits to handle negative numbers
+                                                    const debitHeight = Math.min(
+                                                        Math.round((Math.abs(p.debit_total) / maxValue) * barMaxHeight),
+                                                        barMaxHeight
+                                                    );
+                                                    const creditHeight = Math.min(
+                                                        Math.round((p.credit_total / maxValue) * barMaxHeight),
+                                                        barMaxHeight
+                                                    );
                                                     return (
-                                                        <div key={idx} className="flex-1 flex flex-col items-center justify-end">
-                                                            <div className="flex w-full items-end gap-1">
+                                                        <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full">
+                                                            <div className="flex w-full items-end gap-1 justify-center">
                                                                 {/* Debit bar */}
-                                                                <div
-                                                                    title={`Debit ${p.date}: ${p.debit_total.toFixed(2)}`}
-                                                                    className="flex-1 rounded-sm"
-                                                                    style={{
-                                                                        height: `${debitHeight}px`,
-                                                                        backgroundColor: 'var(--color-chart-1)',
-                                                                    }}
-                                                                />
+                                                                {p.debit_total > 0 && (
+                                                                    <div
+                                                                        title={`Debit ${p.date}: $${Math.abs(p.debit_total).toFixed(2)}`}
+                                                                        className="w-3 rounded-sm bg-red-500 dark:bg-red-600"
+                                                                        style={{
+                                                                            height: `${debitHeight}px`,
+                                                                        }}
+                                                                    />
+                                                                )}
                                                                 {/* Credit bar */}
-                                                                <div
-                                                                    title={`Credit ${p.date}: ${p.credit_total.toFixed(2)}`}
-                                                                    className="flex-1 rounded-sm opacity-80"
-                                                                    style={{
-                                                                        height: `${creditHeight}px`,
-                                                                        backgroundColor: 'var(--color-chart-2)',
-                                                                    }}
-                                                                />
+                                                                {p.credit_total > 0 && (
+                                                                    <div
+                                                                        title={`Credit ${p.date}: $${p.credit_total.toFixed(2)}`}
+                                                                        className="w-3 rounded-sm bg-green-500 dark:bg-green-600"
+                                                                        style={{
+                                                                            height: `${creditHeight}px`,
+                                                                        }}
+                                                                    />
+                                                                )}
                                                             </div>
-                                                            <div className="mt-2 text-[10px] text-muted-foreground">
+                                                            <div className="mt-2 text-[10px] text-muted-foreground truncate max-w-full">
                                                                 {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                             </div>
                                                         </div>
@@ -150,17 +162,17 @@ export default function DriverDashboard() {
                                                 })}
                                             </div>
                                             {/* Legend */}
-                                            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                                            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: 'var(--color-chart-1)' }} />
-                                                    <span>Debits</span>
+                                                    <span className="inline-block h-3 w-3 rounded-sm bg-red-500 dark:bg-red-600" />
+                                                    <span>Debits (Spending)</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: 'var(--color-chart-2)' }} />
-                                                    <span>Credits</span>
+                                                    <span className="inline-block h-3 w-3 rounded-sm bg-green-500 dark:bg-green-600" />
+                                                    <span>Credits (Top-ups)</span>
                                                 </div>
                                                 <div className="ml-auto text-xs">
-                                                    Max daily total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(maxValue)}
+                                                    Max: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(maxValue)}
                                                 </div>
                                             </div>
                                         </div>

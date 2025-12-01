@@ -19,12 +19,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import InputError from '@/components/input-error';
-import { CheckCircle2, User, FileText, Car, ChevronLeft, ChevronRight, Upload, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, User, FileText, Car, ChevronLeft, ChevronRight, Upload, X, AlertCircle, Weight } from 'lucide-react';
 import {
     getVehicleTypeOptions,
     getMakesByType,
     getModelsByMake,
 } from '@/data/vehicle-data';
+import { getVehicleWeightLimit, formatWeight } from '@/lib/vehicle-data';
 import { countryCodes, getDefaultCountryCode } from '@/data/country-codes';
 
 interface FormData {
@@ -48,6 +49,7 @@ interface FormData {
     year: string;
     vehicle_type: string;
     color: string;
+    weight: number;
 }
 
 interface DocumentStatus {
@@ -97,6 +99,7 @@ export default function DriverOnboarding() {
         year: '',
         vehicle_type: 'car',
         color: '',
+        weight: getVehicleWeightLimit('car'),
     });
 
     // State for cascading vehicle dropdowns
@@ -107,9 +110,13 @@ export default function DriverOnboarding() {
     useEffect(() => {
         const makes = getMakesByType(formData.vehicle_type);
         setAvailableMakes(makes);
+        // Auto-fill weight capacity based on vehicle type
+        const weightLimit = getVehicleWeightLimit(formData.vehicle_type);
         if (formData.make && !makes.includes(formData.make)) {
-            setFormData((prev) => ({ ...prev, make: '', model: '' }));
+            setFormData((prev) => ({ ...prev, make: '', model: '', weight: weightLimit }));
             setAvailableModels([]);
+        } else {
+            setFormData((prev) => ({ ...prev, weight: weightLimit }));
         }
     }, [formData.vehicle_type]);
 
@@ -857,6 +864,23 @@ export default function DriverOnboarding() {
                                         }
                                         placeholder="e.g., White"
                                     />
+                                </div>
+
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="weight" className="flex items-center gap-2">
+                                        <Weight className="h-4 w-4" />
+                                        Weight Capacity
+                                    </Label>
+                                    <Input
+                                        id="weight"
+                                        type="number"
+                                        value={formData.weight}
+                                        disabled
+                                        className="bg-muted"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Maximum capacity: {formatWeight(formData.weight)} (auto-filled based on vehicle type)
+                                    </p>
                                 </div>
                             </div>
 

@@ -17,7 +17,8 @@ import { dashboard } from '@/routes';
 import { index as vehiclesIndex, store } from '@/routes/vehicles';
 import { useState, useEffect } from 'react';
 import { getVehicleTypeOptions, getMakesByType, getModelsByMake } from '@/data/vehicle-data';
-import { Car } from 'lucide-react';
+import { getVehicleWeightLimit, formatWeight } from '@/lib/vehicle-data';
+import { Car, Weight } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,6 +42,7 @@ export default function CreateVehicle() {
         year: '',
         vehicle_type: 'car',
         color: '',
+        weight: getVehicleWeightLimit('car'),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState(false);
@@ -51,9 +53,13 @@ export default function CreateVehicle() {
     useEffect(() => {
         const makes = getMakesByType(formData.vehicle_type);
         setAvailableMakes(makes);
+        // Auto-fill weight capacity based on vehicle type
+        const weightLimit = getVehicleWeightLimit(formData.vehicle_type);
         if (formData.make && !makes.includes(formData.make)) {
-            setFormData((prev) => ({ ...prev, make: '', model: '' }));
+            setFormData((prev) => ({ ...prev, make: '', model: '', weight: weightLimit }));
             setAvailableModels([]);
+        } else {
+            setFormData((prev) => ({ ...prev, weight: weightLimit }));
         }
     }, [formData.vehicle_type]);
 
@@ -203,7 +209,7 @@ export default function CreateVehicle() {
                                         <InputError message={errors.year} />
                                     </div>
 
-                                    <div className="space-y-2 md:col-span-2">
+                                    <div className="space-y-2">
                                         <Label htmlFor="color">Color (Optional)</Label>
                                         <Input
                                             id="color"
@@ -214,6 +220,24 @@ export default function CreateVehicle() {
                                             placeholder="e.g., White"
                                         />
                                         <InputError message={errors.color} />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="weight" className="flex items-center gap-2">
+                                            <Weight className="h-4 w-4" />
+                                            Weight Capacity
+                                        </Label>
+                                        <Input
+                                            id="weight"
+                                            type="number"
+                                            value={formData.weight}
+                                            disabled
+                                            className="bg-muted"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Maximum capacity: {formatWeight(formData.weight)} (auto-filled based on vehicle type)
+                                        </p>
+                                        <InputError message={errors.weight} />
                                     </div>
                                 </div>
 

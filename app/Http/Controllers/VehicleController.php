@@ -50,6 +50,7 @@ class VehicleController extends Controller
             'year' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
             'vehicle_type' => ['required', 'string', 'in:car,motorcycle,truck,bus,van'],
             'color' => ['nullable', 'string', 'max:255'],
+            'weight' => ['required', 'numeric', 'min:1'],
         ]);
 
         $registrationNumber = $this->generateRegistrationNumber();
@@ -93,6 +94,7 @@ class VehicleController extends Controller
             'year' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
             'vehicle_type' => ['required', 'string', 'in:car,motorcycle,truck,bus,van'],
             'color' => ['nullable', 'string', 'max:255'],
+            'weight' => ['required', 'numeric', 'min:1'],
             'is_active' => ['boolean'],
         ]);
 

@@ -70,8 +70,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
             /** @var WalletService $walletService */
             $walletService = app(WalletService::class);
 
+            // Get user's vehicles count
+            $vehiclesCount = $user->vehicles()->count();
+
+            // Get recent trips count (this month)
+            $recentTripsCount = \App\Models\TollPassage::where('user_id', $user->id)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+
             return Inertia::render('dashboards/driver-dashboard', [
                 'transactions_summary' => $walletService->getDailyTransactionsSummary($user, 14),
+                'vehicles_count' => $vehiclesCount,
+                'recent_trips_count' => $recentTripsCount,
             ]);
         }
     })->name('dashboard');

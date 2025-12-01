@@ -58,6 +58,7 @@ class OnboardingController extends Controller
             'year' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
             'vehicle_type' => ['required', 'string', 'in:car,bus,truck,motorcycle,emergency,government'],
             'color' => ['nullable', 'string', 'max:50'],
+            'weight' => ['required', 'numeric', 'min:1'],
         ]);
 
         // Concatenate country code with phone number
@@ -96,6 +97,7 @@ class OnboardingController extends Controller
                 'year' => $validated['year'],
                 'vehicle_type' => $validated['vehicle_type'],
                 'color' => $validated['color'] ?? null,
+                'weight' => $validated['weight'],
             ]);
 
             // Mark onboarding as completed
