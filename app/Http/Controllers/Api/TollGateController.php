@@ -32,7 +32,7 @@ class TollGateController extends Controller
             ->with('user')
             ->first();
 
-        if (!$vehicle) {
+        if (! $vehicle) {
             return response()->json([
                 'success' => false,
                 'message' => 'RFID tag not registered or vehicle inactive',
@@ -40,7 +40,7 @@ class TollGateController extends Controller
             ], 404);
         }
 
-        if (!$vehicle->user) {
+        if (! $vehicle->user) {
             return response()->json([
                 'success' => false,
                 'message' => 'No user associated with this vehicle',
@@ -93,19 +93,19 @@ class TollGateController extends Controller
             // Record transaction
             Transaction::create([
                 'user_id' => $user->id,
-                'type' => 'toll_payment',
+                'type' => 'debit',
                 'amount' => -$totalAmount,
                 'balance_after' => $user->balance,
                 'description' => "Toll payment at {$tollGate->name}",
-                'reference' => "TOLL-" . now()->format('YmdHis'),
-                'metadata' => json_encode([
+                'reference' => 'TOLL-'.now()->format('YmdHis'),
+                'metadata' => [
                     'toll_gate_id' => $tollGate->id,
                     'vehicle_id' => $vehicle->id,
                     'rfid_uid' => $rfidUid,
                     'toll_amount' => $tollAmount,
                     'fine_amount' => $fineAmount,
                     'weight_kg' => $request->weight_kg,
-                ]),
+                ],
             ]);
 
             // Record toll passage
@@ -126,7 +126,7 @@ class TollGateController extends Controller
 
             DB::commit();
 
-            Log::info("Toll passage successful", [
+            Log::info('Toll passage successful', [
                 'rfid' => $rfidUid,
                 'user' => $user->name,
                 'amount' => $totalAmount,
@@ -150,7 +150,7 @@ class TollGateController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Toll passage failed", [
+            Log::error('Toll passage failed', [
                 'rfid' => $rfidUid,
                 'error' => $e->getMessage(),
             ]);
@@ -171,7 +171,7 @@ class TollGateController extends Controller
         $tollGateId = $request->input('toll_gate_id', 1);
         $tollGate = \App\Models\TollGate::find($tollGateId);
 
-        if (!$tollGate) {
+        if (! $tollGate) {
             return response()->json([
                 'success' => false,
                 'message' => 'Toll gate not found',
