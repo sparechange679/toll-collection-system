@@ -22,7 +22,7 @@ const char* WIFI_SSID = "TP-Link_173D";
 const char* WIFI_PASSWORD = "54712195";
 
 // const char* API_URL = "http://192.168.14.119:8000/api/toll-gate/verify-rfid";
-const char* API_URL = "http://192.168.1.100:8000/api/toll-gate/verify-rfid";
+const char* API_URL = "http://192.168.1.108:8000/api/toll-gate/verify-rfid";
 
 // ===== PIN DEFINITIONS =====
 // RFID Pins
