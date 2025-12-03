@@ -45,7 +45,7 @@ class DashboardController extends Controller
         $todayStats = [
             'total_revenue' => $todayPassages->sum('total_amount'),
             'total_passages' => $todayPassages->count(),
-            'successful_passages' => $todayPassages->where('status', 'success')->count(),
+            'successful_passages' => $todayPassages->where('status', 'successful')->count(),
             'rejected_passages' => $todayPassages->where('status', 'like', 'rejected_%')->count(),
             'cash_payments' => $todayPassages->where('status', 'cash_payment')->count(),
             'manual_overrides' => $todayPassages->where('status', 'manual_override')->count(),
@@ -120,7 +120,7 @@ class DashboardController extends Controller
             $shiftStats = [
                 'total_revenue' => $shiftPassages->sum('total_amount'),
                 'total_passages' => $shiftPassages->count(),
-                'successful_passages' => $shiftPassages->where('status', 'success')->count(),
+                'successful_passages' => $shiftPassages->where('status', 'successful')->count(),
                 'rejected_passages' => $shiftPassages->where('status', 'like', 'rejected_%')->count(),
             ];
         }

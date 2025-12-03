@@ -48,7 +48,7 @@ const char* API_URL = "http://192.168.1.107:8000/api/toll-gate/verify-rfid";
 
 // Gate servo positions
 #define GATE_CLOSED   0     // Degrees
-#define GATE_OPEN     -90    // Degrees
+#define GATE_OPEN     90    // Degrees
 
 // ===== OBJECT INSTANCES =====
 MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
@@ -287,7 +287,7 @@ void handleGateOpeningState() {
 
 void handleGateOpenState() {
   // Wait for vehicle to pass (weight decreases) OR timeout after 15 seconds
-  if (!vehiclePresent || (millis() - stateTimer > 15000)) {
+  if (!vehiclePresent || (millis() - stateTimer > 5000)) {
     Serial.println("\n🚗 Vehicle passed / Timeout");
     currentState = STATE_GATE_CLOSING;
   }

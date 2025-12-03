@@ -18,23 +18,27 @@ class ReportController extends Controller
      */
     public function index(Request $request): Response
     {
-        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $dateFromInput = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateToInput = $request->get('date_to', now()->format('Y-m-d'));
 
-        // Revenue Statistics
-        $totalRevenue = Transaction::where('type', 'debit')
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->sum('amount');
+        // Convert to Carbon instances with proper time boundaries
+        $dateFrom = \Carbon\Carbon::parse($dateFromInput)->startOfDay();
+        $dateTo = \Carbon\Carbon::parse($dateToInput)->endOfDay();
 
-        $dailyRevenue = Transaction::where('type', 'debit')
+        // Revenue Statistics - Use toll_passages table for accurate toll revenue
+        $totalRevenue = \App\Models\TollPassage::where('status', 'successful')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(amount) as total'))
+            ->sum('total_amount');
+
+        $dailyRevenue = \App\Models\TollPassage::where('status', 'successful')
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
-        // Transaction Statistics
-        $totalTransactions = Transaction::where('type', 'debit')
+        // Transaction Statistics - Toll passages only
+        $totalTransactions = \App\Models\TollPassage::where('status', 'successful')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->count();
 
@@ -56,11 +60,12 @@ class ReportController extends Controller
             ->groupBy('vehicle_type')
             ->get();
 
-        // Top Revenue Generators
-        $topUsers = Transaction::where('type', 'debit')
+        // Top Revenue Generators - Use toll_passages for accurate spending
+        $topUsers = \App\Models\TollPassage::where('status', 'successful')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->select('user_id', DB::raw('SUM(amount) as total_spent'), DB::raw('COUNT(*) as transaction_count'))
+            ->select('user_id', DB::raw('SUM(total_amount) as total_spent'), DB::raw('COUNT(*) as transaction_count'))
             ->groupBy('user_id')
+            ->having('total_spent', '>', 0)
             ->orderByDesc('total_spent')
             ->limit(10)
             ->with('user:id,name,email')
@@ -68,8 +73,8 @@ class ReportController extends Controller
 
         return Inertia::render('admin/reports/index', [
             'filters' => [
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
+                'date_from' => $dateFromInput,
+                'date_to' => $dateToInput,
             ],
             'revenue' => [
                 'total' => $totalRevenue,
