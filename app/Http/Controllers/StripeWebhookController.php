@@ -122,6 +122,25 @@ class StripeWebhookController extends Controller
                 'amount' => $amount,
                 'transaction_id' => $transaction->id,
             ]);
+
+            // Send email confirmation
+            try {
+                \Mail::to($user->email)->send(new \App\Mail\WalletTopUpMail([
+                    'user_name' => $user->name,
+                    'user_email' => $user->email,
+                    'amount' => (float) $amount,
+                    'new_balance' => $user->fresh()->balance,
+                    'reference' => $session->id,
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                ]));
+
+                Log::info('Wallet top-up email sent', ['user' => $user->email]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to send wallet top-up email', [
+                    'user' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         } catch (Exception $e) {
             Log::error('Failed to credit wallet', [
                 'error' => $e->getMessage(),

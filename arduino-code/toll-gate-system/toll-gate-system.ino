@@ -22,7 +22,7 @@ const char* WIFI_SSID = "TP-Link_173D";
 const char* WIFI_PASSWORD = "54712195";
 
 // const char* API_URL = "http://192.168.14.119:8000/api/toll-gate/verify-rfid";
-const char* API_URL = "http://192.168.1.108:8000/api/toll-gate/verify-rfid";
+const char* API_URL = "http://192.168.1.107:8000/api/toll-gate/verify-rfid";
 
 // ===== PIN DEFINITIONS =====
 // RFID Pins
@@ -42,13 +42,13 @@ const char* API_URL = "http://192.168.1.108:8000/api/toll-gate/verify-rfid";
 #define BUZZER        27
 
 // ===== CONFIGURATION =====
-#define WEIGHT_THRESHOLD  100.0   // Raw reading threshold (not grams)
-#define CALIBRATION_FACTOR 1.0    // Disabled calibration - using raw readings
-#define TOLL_GATE_ID      1       // Your toll gate ID from database
+#define WEIGHT_THRESHOLD  100.0
+#define CALIBRATION_FACTOR 1.0
+#define TOLL_GATE_ID      1
 
 // Gate servo positions
 #define GATE_CLOSED   0     // Degrees
-#define GATE_OPEN     90    // Degrees
+#define GATE_OPEN     -90    // Degrees
 
 // ===== OBJECT INSTANCES =====
 MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
@@ -57,13 +57,13 @@ HX711 scale;
 
 // ===== STATE VARIABLES =====
 enum SystemState {
-  STATE_IDLE,              // Waiting for vehicle
-  STATE_VEHICLE_DETECTED,  // Vehicle on sensor, waiting for RFID
-  STATE_PROCESSING,        // Checking RFID with API
-  STATE_GATE_OPENING,      // Authorized, gate opening
-  STATE_GATE_OPEN,         // Gate is open, waiting for vehicle to pass
-  STATE_GATE_CLOSING,      // Vehicle passed, closing gate
-  STATE_ACCESS_DENIED      // No balance, showing error
+  STATE_IDLE,
+  STATE_VEHICLE_DETECTED,
+  STATE_PROCESSING,
+  STATE_GATE_OPENING,
+  STATE_GATE_OPEN,
+  STATE_GATE_CLOSING,
+  STATE_ACCESS_DENIED
 };
 
 SystemState currentState = STATE_IDLE;
