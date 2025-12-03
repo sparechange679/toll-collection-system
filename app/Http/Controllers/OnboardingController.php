@@ -88,7 +88,7 @@ class OnboardingController extends Controller
                 'emergency_contact_phone' => $fullEmergencyPhone,
             ]);
 
-            // Create vehicle with auto-generated registration number
+            // Create vehicle with auto-generated registration number and default RFID tag
             Vehicle::create([
                 'user_id' => $request->user()->id,
                 'registration_number' => $registrationNumber,
@@ -98,6 +98,7 @@ class OnboardingController extends Controller
                 'vehicle_type' => $validated['vehicle_type'],
                 'color' => $validated['color'] ?? null,
                 'weight' => $validated['weight'],
+                'rfid_tag' => 'C3 3F FF E3', // Default RFID tag for new drivers
             ]);
 
             // Mark onboarding as completed

@@ -29,7 +29,7 @@ class TollGateController extends Controller
         // Find vehicle by RFID tag
         $vehicle = Vehicle::where('rfid_tag', $rfidUid)
             ->where('is_active', true)
-            ->with('user')
+            ->with(['user', 'user.driverProfile'])
             ->first();
 
         if (! $vehicle) {
@@ -68,8 +68,74 @@ class TollGateController extends Controller
 
         $totalAmount = $tollAmount + $fineAmount;
 
-        // Check if user has sufficient balance
+        // Check if this is a governmental vehicle (license number starts with MG)
         $user = $vehicle->user;
+        $isGovernmental = false;
+
+        if ($user->driverProfile && str_starts_with(strtoupper($user->driverProfile->license_number), 'MG')) {
+            $isGovernmental = true;
+        }
+
+        // Governmental vehicles pass without payment
+        if ($isGovernmental) {
+            // Record passage without payment
+            DB::beginTransaction();
+            try {
+                TollPassage::create([
+                    'toll_gate_id' => $tollGate->id,
+                    'user_id' => $user->id,
+                    'vehicle_id' => $vehicle->id,
+                    'rfid_tag' => $rfidUid,
+                    'status' => 'successful',
+                    'toll_amount' => 0,
+                    'fine_amount' => 0,
+                    'total_amount' => 0,
+                    'vehicle_weight_kg' => $request->weight_kg,
+                    'is_overweight' => $isOverweight,
+                    'payment_method' => 'governmental_exemption',
+                    'scanned_at' => now(),
+                ]);
+
+                DB::commit();
+
+                Log::info('Governmental vehicle passage', [
+                    'rfid' => $rfidUid,
+                    'user' => $user->name,
+                    'license' => $user->driverProfile->license_number,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Access granted - Governmental vehicle (No charge)',
+                    'data' => [
+                        'driver_name' => $user->name,
+                        'vehicle_registration' => $vehicle->registration_number,
+                        'vehicle_make_model' => "{$vehicle->make} {$vehicle->model}",
+                        'amount_deducted' => '0.00',
+                        'new_balance' => number_format($user->balance, 2),
+                        'toll_amount' => '0.00',
+                        'fine_amount' => '0.00',
+                        'is_overweight' => $isOverweight,
+                        'is_governmental' => true,
+                        'timestamp' => now()->toIso8601String(),
+                    ],
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Governmental vehicle passage failed', [
+                    'rfid' => $rfidUid,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction failed - Please try again',
+                    'error_code' => 'TRANSACTION_FAILED',
+                ], 500);
+            }
+        }
+
+        // Check if user has sufficient balance
         if ($user->balance < $totalAmount) {
             // Create notification for insufficient balance
             $notification = \App\Models\Notification::create([

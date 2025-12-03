@@ -178,6 +178,7 @@ test('verifyRfid applies overweight fine correctly', function () {
         'year' => 2020,
         'color' => 'White',
         'vehicle_type' => 'car',
+        'weight' => 5000, // Vehicle weight capacity
         'is_active' => true,
     ]);
 
@@ -203,4 +204,87 @@ test('verifyRfid applies overweight fine correctly', function () {
     // Verify user balance was deducted correctly
     $user->refresh();
     expect($user->balance)->toBe('8500.00');
+});
+
+test('verifyRfid allows governmental vehicles to pass without payment', function () {
+    // Create test user with driver profile (governmental license)
+    $user = User::factory()->create(['balance' => 10000.00, 'role' => 'driver']);
+
+    // Create driver profile with MG license number (governmental)
+    \App\Models\DriverProfile::create([
+        'user_id' => $user->id,
+        'license_number' => 'MG12345',
+        'license_expiry_date' => now()->addYears(5),
+        'phone_number' => '+250 788 123 456',
+        'address' => '123 Test St',
+        'city' => 'Kigali',
+        'district' => 'Gasabo',
+        'date_of_birth' => now()->subYears(30),
+        'id_number' => 'ID123456789',
+    ]);
+
+    // Create toll gate
+    $tollGate = TollGate::create([
+        'name' => 'Main Gate',
+        'location' => 'Test Location',
+        'gate_identifier' => 'GATE-001',
+        'base_toll_rate' => 500,
+        'overweight_fine_rate' => 1000,
+        'weight_limit_kg' => 5000,
+        'is_active' => true,
+        'gate_status' => 'operational',
+        'rfid_scanner_status' => 'operational',
+        'weight_sensor_status' => 'operational',
+    ]);
+
+    // Create governmental vehicle
+    $vehicle = Vehicle::create([
+        'user_id' => $user->id,
+        'rfid_tag' => 'AA BB CC DD',
+        'registration_number' => 'GOV-001',
+        'make' => 'Toyota',
+        'model' => 'Land Cruiser',
+        'year' => 2024,
+        'color' => 'White',
+        'vehicle_type' => 'government',
+        'weight' => 3000,
+        'is_active' => true,
+    ]);
+
+    // Send RFID verification request
+    $response = $this->postJson('/api/toll-gate/verify-rfid', [
+        'rfid_uid' => 'AA BB CC DD',
+        'toll_gate_id' => $tollGate->id,
+        'weight_kg' => 2500,
+    ]);
+
+    // Assert successful response with no charge
+    $response->assertSuccessful()
+        ->assertJson([
+            'success' => true,
+            'message' => 'Access granted - Governmental vehicle (No charge)',
+            'data' => [
+                'amount_deducted' => '0.00',
+                'toll_amount' => '0.00',
+                'fine_amount' => '0.00',
+                'is_governmental' => true,
+            ],
+        ]);
+
+    // Verify NO transaction was created (no payment)
+    $transaction = Transaction::where('user_id', $user->id)->first();
+    expect($transaction)->toBeNull();
+
+    // Verify user balance was NOT deducted
+    $user->refresh();
+    expect($user->balance)->toBe('10000.00');
+
+    // Verify toll passage was recorded
+    $passage = \App\Models\TollPassage::where('user_id', $user->id)->first();
+    expect($passage)->not->toBeNull()
+        ->and($passage->toll_amount)->toBe('0.00')
+        ->and($passage->fine_amount)->toBe('0.00')
+        ->and($passage->total_amount)->toBe('0.00')
+        ->and($passage->payment_method)->toBe('governmental_exemption')
+        ->and($passage->status)->toBe('successful');
 });
